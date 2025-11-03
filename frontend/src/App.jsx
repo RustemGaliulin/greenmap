@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
 
-function App() {
-  const [message, setMessage] = useState("");
+export default function App() {
+  const [msg, setMsg] = useState("loading...");
 
   useEffect(() => {
     fetch("http://localhost:8000/")
-      .then((res) => res.json())
-      .then((data) => setMessage(data.message))
-      .catch((err) => console.error(err));
+      .then((r) => r.json())
+      .then((data) => setMsg(data.message))
+      .catch((e) => setMsg("fetch error: " + e.message));
   }, []);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-green-100 text-xl">
-      <h1 className="font-bold text-3xl mb-4 text-green-800">🌎 GreenMap</h1>
-      <p className="text-gray-700">{message}</p>
+    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
+      <h1>🌎 GreenMap</h1>
+      <p>Backend says: <b>{msg}</b></p>
     </div>
   );
 }
-
-export default App;
