@@ -1,19 +1,24 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+function Home() {
+  return (
+    <div style={{ padding: 24 }}>
+      <h1>🌎 GreenMap</h1>
+      <p><Link to="/login">Sign In</Link> | <Link to="/register">Sign Up</Link></p>
+    </div>
+  );
+}
 
 export default function App() {
-  const [msg, setMsg] = useState("loading...");
-
-  useEffect(() => {
-    fetch("/api/")
-      .then((r) => r.json())
-      .then((data) => setMsg(data.message))
-      .catch((e) => setMsg("fetch error: " + e.message));
-  }, []);
-
   return (
-    <div style={{ padding: 24, fontFamily: "sans-serif" }}>
-      <h1>🌎 GreenMap</h1>
-      <p>Backend says: <b>{msg}</b></p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home/>} />
+        <Route path="/login" element={<Login/>} />
+        <Route path="/register" element={<Register/>} />
+      </Routes>
+    </BrowserRouter>
   );
 }

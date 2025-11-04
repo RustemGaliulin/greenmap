@@ -7,11 +7,16 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "kill-port": "kill -9 $(lsof -t -i:5173) 2>/dev/null || true",
+    "dev-clean": "npm run kill-port && npm run dev"
   },
   "dependencies": {
+    "axios": "^1.13.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-hook-form": "^7.66.0",
+    "react-router-dom": "^7.9.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

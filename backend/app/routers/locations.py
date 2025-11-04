@@ -17,7 +17,7 @@ def list_locations(db: Session = Depends(get_db)):
 def create_location(
     payload: LocationCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),  # now required
+    user: User = Depends(get_current_user),
 ):
     loc = Location(
         title=payload.title,
