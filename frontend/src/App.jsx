@@ -4,7 +4,7 @@ export default function App() {
   const [msg, setMsg] = useState("loading...");
 
   useEffect(() => {
-    fetch("http://localhost:8000/")
+    fetch("/api/")
       .then((r) => r.json())
       .then((data) => setMsg(data.message))
       .catch((e) => setMsg("fetch error: " + e.message));
