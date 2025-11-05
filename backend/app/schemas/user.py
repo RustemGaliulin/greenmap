@@ -5,5 +5,4 @@ class UserOut(BaseModel):
     email: EmailStr
     is_admin: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}

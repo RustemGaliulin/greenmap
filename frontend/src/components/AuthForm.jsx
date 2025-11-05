@@ -17,13 +17,13 @@ export default function AuthForm({ mode = "login", onSuccess }) {
     const isLogin = mode === "login";
 
     const onSubmit = async (data) => {
-        setMessage({ type: "", text: "" }); // clear previous messages
+        setMessage({ type: "", text: "" });
         const isValid = await trigger();
         if (!isValid) return;
 
         const endpoint = isLogin ? "login" : "register";
         try {
-            const res = await fetch(`http://localhost:8000/auth/${endpoint}`, {
+            const res = await fetch(`/api/auth/${endpoint}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -31,19 +31,26 @@ export default function AuthForm({ mode = "login", onSuccess }) {
             const result = await res.json();
             if (!res.ok) throw new Error(result.detail || `${mode} failed`);
 
-            setMessage({
-                type: "success",
-                text: isLogin
-                    ? "✅ Logged in successfully!"
-                    : "✅ Registration successful! You can sign in now.",
-            });
-
-            if (isLogin) onSuccess(result.access_token);
-            else onSuccess();
+            if (!isLogin && result.access_token) {
+                localStorage.setItem("access_token", result.access_token);
+                setMessage({
+                    type: "success",
+                    text: "✅ Registration successful! You are now logged in.",
+                });
+                onSuccess(result.access_token);
+            } else {
+                setMessage({
+                    type: "success",
+                    text: "✅ Logged in successfully!",
+                });
+                if (isLogin) onSuccess(result.access_token);
+            }
         } catch (err) {
+            console.error(err);
             setMessage({ type: "error", text: `❌ ${err.message}` });
         }
     };
+
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -59,19 +66,17 @@ export default function AuthForm({ mode = "login", onSuccess }) {
                 <div className="h-5 mb-2 transition-opacity duration-200 text-center">
                     <span
                         className={`text-sm font-medium ${message.text
-                                ? message.type === "success"
-                                    ? "text-green-600 opacity-100"
-                                    : "text-red-600 opacity-100"
-                                : "opacity-0"
+                            ? message.type === "success"
+                                ? "text-green-600 opacity-100"
+                                : "text-red-600 opacity-100"
+                            : "opacity-0"
                             }`}
                     >
                         {message.text || "\u00A0"}
                     </span>
                 </div>
 
-
-                {/* Email */}
-                <label className="block text-gray-700 font-medium mb-1" htmlFor="email">
+                <label className="block text-gray-700 font-medium text-left mb-1" htmlFor="email">
                     Email
                 </label>
                 <input
@@ -85,7 +90,7 @@ export default function AuthForm({ mode = "login", onSuccess }) {
                     {...register("email", {
                         required: "Email is required",
                         pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            value: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
                             message: "Please enter a valid email address",
                         },
                     })}
@@ -99,9 +104,8 @@ export default function AuthForm({ mode = "login", onSuccess }) {
                     </span>
                 </div>
 
-                {/* Password */}
                 <label
-                    className="block text-gray-700 font-medium mb-1"
+                    className="block text-gray-700 text-left font-medium mb-1"
                     htmlFor="password"
                 >
                     Password
@@ -127,7 +131,6 @@ export default function AuthForm({ mode = "login", onSuccess }) {
                         }}
                     />
 
-                    {/* Eye icon for toggle */}
                     <button
                         type="button"
                         title={showPassword ? "Hide password" : "Show password"}
