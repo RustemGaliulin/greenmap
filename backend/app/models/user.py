@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class User(Base):
@@ -9,3 +10,4 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    locations = relationship("Location", back_populates="owner")
