@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AuthForm from "./pages/AuthForm";
 
 function Home() {
   return (
@@ -16,8 +17,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home/>} />
-        <Route path="/login" element={<Login/>} />
-        <Route path="/register" element={<Register/>} />
+        <Route path="/login" element={<AuthForm mode="login" />} />
+        <Route path="/register" element={<AuthForm mode="register" />} />
       </Routes>
     </BrowserRouter>
   );
