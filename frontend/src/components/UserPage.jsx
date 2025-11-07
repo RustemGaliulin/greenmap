@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { Pencil, Plus } from "lucide-react";
+import { validateLocationInput } from "../utils/validators";
 
 export default function UserPage() {
   const [locations, setLocations] = useState([]);
-  const [form, setForm] = useState({ name: "", description: "", latitude: "", longitude: "" });
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    latitude: "",
+    longitude: "",
+  });
   const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,14 +33,21 @@ export default function UserPage() {
     fetchLocations();
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+
+    const error = validateLocationInput(form);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+
     setLoading(true);
-    const endpoint = editing
-      ? `/api/locations/${editing.id}`
-      : "/api/locations/";
+    const endpoint = editing ? `/api/locations/${editing.id}` : "/api/locations/";
     const method = editing ? "PUT" : "POST";
 
     try {
@@ -71,19 +84,31 @@ export default function UserPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-10">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">🌿 My Locations</h2>
         <button
           onClick={() => setEditing(null)}
-          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
         >
           <Plus className="w-4 h-4" /> Add New
         </button>
       </div>
 
-      {message && <div className="text-gray-600 text-sm mb-4">{message}</div>}
+      {/* Compact message area */}
+      <div
+        className={`h-5 mb-4 text-sm text-left transition-opacity duration-200 ${
+          message
+            ? message.startsWith("✅")
+              ? "text-green-600 opacity-100"
+              : "text-red-500 opacity-100"
+            : "opacity-0"
+        }`}
+      >
+        {message || "placeholder"}
+      </div>
 
-
+      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-xl p-6 mb-8 flex flex-col gap-3"
@@ -91,6 +116,7 @@ export default function UserPage() {
         <h3 className="text-xl font-semibold text-gray-700 mb-2">
           {editing ? "✏️ Edit Location" : "➕ Add Location"}
         </h3>
+
         <input
           name="name"
           placeholder="Name"
@@ -99,6 +125,7 @@ export default function UserPage() {
           required
           className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
         />
+
         <textarea
           name="description"
           placeholder="Description"
@@ -106,6 +133,7 @@ export default function UserPage() {
           onChange={handleChange}
           className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
         />
+
         <div className="flex gap-2">
           <input
             name="latitude"
@@ -122,6 +150,7 @@ export default function UserPage() {
             className="p-3 border rounded-lg w-1/2 focus:ring-2 focus:ring-blue-400"
           />
         </div>
+
         <button
           type="submit"
           disabled={loading}
@@ -133,7 +162,7 @@ export default function UserPage() {
         </button>
       </form>
 
-      {/* List of locations */}
+      {/* List */}
       <div className="grid md:grid-cols-2 gap-4">
         {locations.map((loc) => (
           <div
@@ -142,7 +171,9 @@ export default function UserPage() {
           >
             <div>
               <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-blue-700">{loc.name}</h3>
+                <h3 className="text-lg font-semibold text-blue-700">
+                  {loc.name}
+                </h3>
                 <button
                   onClick={() => startEdit(loc)}
                   className="text-gray-500 hover:text-blue-600"
