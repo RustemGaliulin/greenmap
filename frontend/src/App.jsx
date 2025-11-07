@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useEffect, useState } from "react";
 import Main from "./components/Main";
 import AuthForm from "./components/AuthForm";
+import UserPage from "./components/UserPage";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -64,7 +65,16 @@ export default function App() {
               )
             }
           />
-
+          <Route
+            path="/user"
+            element={
+              isAuthenticated ? (
+                <UserPage />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Main>

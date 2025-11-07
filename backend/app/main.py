@@ -19,4 +19,4 @@ def root():
     return {"message": "Welcome to GreenMap API"}
 
 app.include_router(auth_router)                        
-app.include_router(locations_router, prefix="/locations", tags=["Locations"])
+app.include_router(locations_router, tags=["Locations"])
