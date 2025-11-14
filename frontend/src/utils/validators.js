@@ -1,4 +1,4 @@
-import Filter from "bad-words";
+import {Filter} from "bad-words";
 import DOMPurify from "dompurify";
 import validator from "validator";
 
