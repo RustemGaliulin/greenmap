@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { validateLocationInput } from "../utils/validators";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function UserPage() {
   const [locations, setLocations] = useState([]);
@@ -13,8 +14,11 @@ export default function UserPage() {
   const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const token = localStorage.getItem("access_token");
+
 
   const fetchLocations = async () => {
     try {
@@ -59,7 +63,9 @@ export default function UserPage() {
         },
         body: JSON.stringify(form),
       });
+
       if (!res.ok) throw new Error("Failed to save location");
+
       await fetchLocations();
       setForm({ name: "", description: "", latitude: "", longitude: "" });
       setEditing(null);
@@ -71,6 +77,7 @@ export default function UserPage() {
     }
   };
 
+
   const startEdit = (loc) => {
     setEditing(loc);
     setForm({
@@ -80,6 +87,34 @@ export default function UserPage() {
       longitude: loc.longitude || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+
+  const confirmDelete = (loc) => {
+    setDeleteTarget(loc);
+    setDeleteOpen(true);
+  };
+
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      const res = await fetch(`/api/locations/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to delete location");
+
+      setMessage("🗑️ Location deleted");
+      await fetchLocations();
+    } catch (err) {
+      setMessage(`❌ ${err.message}`);
+    } finally {
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -95,15 +130,14 @@ export default function UserPage() {
         </button>
       </div>
 
-      {/* Compact message area */}
+      {/* Message */}
       <div
-        className={`h-5 mb-4 text-sm text-left transition-opacity duration-200 ${
-          message
-            ? message.startsWith("✅")
+        className={`h-5 mb-4 text-sm text-left transition-opacity duration-200 ${message
+            ? message.startsWith("✅") || message.startsWith("🗑️")
               ? "text-green-600 opacity-100"
               : "text-red-500 opacity-100"
             : "opacity-0"
-        }`}
+          }`}
       >
         {message || "placeholder"}
       </div>
@@ -154,9 +188,8 @@ export default function UserPage() {
         <button
           type="submit"
           disabled={loading}
-          className={`bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition ${
-            loading ? "opacity-70 cursor-wait" : ""
-          }`}
+          className={`bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition ${loading ? "opacity-70 cursor-wait" : ""
+            }`}
         >
           {loading ? "Saving..." : editing ? "Update" : "Add"}
         </button>
@@ -171,19 +204,30 @@ export default function UserPage() {
           >
             <div>
               <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-blue-700">
-                  {loc.name}
-                </h3>
-                <button
-                  onClick={() => startEdit(loc)}
-                  className="text-gray-500 hover:text-blue-600"
-                  title="Edit"
-                >
-                  <Pencil className="w-5 h-5" />
-                </button>
+                <h3 className="text-lg font-semibold text-blue-700">{loc.name}</h3>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => startEdit(loc)}
+                    className="text-gray-500 hover:text-blue-600"
+                    title="Edit"
+                  >
+                    <Pencil className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={() => confirmDelete(loc)}
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
+
               <p className="text-sm text-gray-600 mt-2">{loc.description}</p>
             </div>
+
             <div className="text-xs text-gray-400 mt-3">
               {loc.latitude && loc.longitude
                 ? `📍 ${loc.latitude}, ${loc.longitude}`
@@ -198,6 +242,19 @@ export default function UserPage() {
           </div>
         )}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        open={deleteOpen}
+        title="Delete Location?"
+        message={
+          deleteTarget
+            ? `Are you sure you want to delete "${deleteTarget.name}"? This action cannot be undone.`
+            : ""
+        }
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }
