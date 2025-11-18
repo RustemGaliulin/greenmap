@@ -1,33 +1,40 @@
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+
 import { validateLocationInput } from "../utils/validators";
 import ConfirmModal from "../components/ConfirmModal";
+import LocationFormModal from "../components/LocationFormModal";
 
 export default function UserPage() {
   const [locations, setLocations] = useState([]);
+
   const [form, setForm] = useState({
     name: "",
     description: "",
     latitude: "",
     longitude: "",
   });
+
   const [editing, setEditing] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const token = localStorage.getItem("access_token");
-
 
   const fetchLocations = async () => {
     try {
       const res = await fetch("/api/locations/", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!res.ok) throw new Error("Failed to load locations");
-      const data = await res.json();
-      setLocations(data);
+
+      setLocations(await res.json());
     } catch (err) {
       setMessage(err.message);
     }
@@ -37,13 +44,24 @@ export default function UserPage() {
     fetchLocations();
   }, []);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const openAddModal = () => {
+    setEditing(null);
+    setForm({ name: "", description: "", latitude: "", longitude: "" });
+    setFormOpen(true);
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage("");
+  const openEditModal = (loc) => {
+    setEditing(loc);
+    setForm({
+      name: loc.name,
+      description: loc.description || "",
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+    });
+    setFormOpen(true);
+  };
 
+  const handleSave = async () => {
     const error = validateLocationInput(form);
     if (error) {
       setMessage(error);
@@ -67,9 +85,10 @@ export default function UserPage() {
       if (!res.ok) throw new Error("Failed to save location");
 
       await fetchLocations();
-      setForm({ name: "", description: "", latitude: "", longitude: "" });
-      setEditing(null);
+
       setMessage(editing ? "✅ Location updated" : "✅ Location added");
+      setFormOpen(false);
+      setEditing(null);
     } catch (err) {
       setMessage(`❌ ${err.message}`);
     } finally {
@@ -77,28 +96,12 @@ export default function UserPage() {
     }
   };
 
-
-  const startEdit = (loc) => {
-    setEditing(loc);
-    setForm({
-      name: loc.name,
-      description: loc.description || "",
-      latitude: loc.latitude || "",
-      longitude: loc.longitude || "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-
   const confirmDelete = (loc) => {
     setDeleteTarget(loc);
     setDeleteOpen(true);
   };
 
-
   const handleDelete = async () => {
-    if (!deleteTarget) return;
-
     try {
       const res = await fetch(`/api/locations/${deleteTarget.id}`, {
         method: "DELETE",
@@ -107,8 +110,8 @@ export default function UserPage() {
 
       if (!res.ok) throw new Error("Failed to delete location");
 
-      setMessage("🗑️ Location deleted");
       await fetchLocations();
+      setMessage("🗑️ Location deleted");
     } catch (err) {
       setMessage(`❌ ${err.message}`);
     } finally {
@@ -122,117 +125,60 @@ export default function UserPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-700">🌿 My Locations</h2>
+
         <button
-          onClick={() => setEditing(null)}
-          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+          onClick={openAddModal}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
         >
-          <Plus className="w-4 h-4" /> Add New
+          <Plus className="w-5 h-5" /> Add Location
         </button>
       </div>
 
-      {/* Message */}
+      {/* Inline Notification */}
       <div
-        className={`h-5 mb-4 text-sm text-left transition-opacity duration-200 ${message
-            ? message.startsWith("✅") || message.startsWith("🗑️")
-              ? "text-green-600 opacity-100"
-              : "text-red-500 opacity-100"
-            : "opacity-0"
+        className={`h-5 text-sm mb-4 transition-opacity ${message ? "opacity-100" : "opacity-0"
+          } ${message.startsWith("❌")
+            ? "text-red-500"
+            : "text-green-600"
           }`}
       >
         {message || "placeholder"}
       </div>
-
-      {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-xl p-6 mb-8 flex flex-col gap-3"
-      >
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">
-          {editing ? "✏️ Edit Location" : "➕ Add Location"}
-        </h3>
-
-        <input
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-        />
-
-        <textarea
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-        />
-
-        <div className="flex gap-2">
-          <input
-            name="latitude"
-            placeholder="Latitude"
-            value={form.latitude}
-            onChange={handleChange}
-            className="p-3 border rounded-lg w-1/2 focus:ring-2 focus:ring-blue-400"
-          />
-          <input
-            name="longitude"
-            placeholder="Longitude"
-            value={form.longitude}
-            onChange={handleChange}
-            className="p-3 border rounded-lg w-1/2 focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`bg-blue-600 text-white font-semibold p-3 rounded-lg hover:bg-blue-700 transition ${loading ? "opacity-70 cursor-wait" : ""
-            }`}
-        >
-          {loading ? "Saving..." : editing ? "Update" : "Add"}
-        </button>
-      </form>
 
       {/* List */}
       <div className="grid md:grid-cols-2 gap-4">
         {locations.map((loc) => (
           <div
             key={loc.id}
-            className="bg-white border rounded-xl shadow-sm p-5 hover:shadow-md transition flex flex-col justify-between"
+            className="bg-white border rounded-xl shadow-sm p-5 hover:shadow-md transition"
           >
-            <div>
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-blue-700">{loc.name}</h3>
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-blue-700">{loc.name}</h3>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => startEdit(loc)}
-                    className="text-gray-500 hover:text-blue-600"
-                    title="Edit"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => openEditModal(loc)}
+                  className="text-gray-500 hover:text-blue-600"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
 
-                  <button
-                    onClick={() => confirmDelete(loc)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => confirmDelete(loc)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
-
-              <p className="text-sm text-gray-600 mt-2">{loc.description}</p>
             </div>
 
-            <div className="text-xs text-gray-400 mt-3">
+            <p className="text-sm text-gray-600 mt-2">{loc.description}</p>
+
+            <p className="text-xs text-gray-400 mt-3">
               {loc.latitude && loc.longitude
                 ? `📍 ${loc.latitude}, ${loc.longitude}`
                 : "No coordinates"}
-            </div>
+            </p>
           </div>
         ))}
 
@@ -243,7 +189,17 @@ export default function UserPage() {
         )}
       </div>
 
-      {/* Confirm Delete Modal */}
+      {/* Modals */}
+      <LocationFormModal
+        open={formOpen}
+        onCancel={() => setFormOpen(false)}
+        onSubmit={handleSave}
+        form={form}
+        setForm={setForm}
+        loading={loading}
+        editing={editing}
+      />
+
       <ConfirmModal
         open={deleteOpen}
         title="Delete Location?"
